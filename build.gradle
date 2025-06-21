@@ -1,7 +1,7 @@
 plugins {
     id 'java'
-    id 'com.gradleup.shadow' version '8.3.6' // for shadowing
     id 'io.freefair.lombok' version '8.10.2'
+    id 'maven-publish'
 }
 
 group = 'com.github.server-utilities'
@@ -28,21 +28,11 @@ configurations {
 }
 
 dependencies {
-//    implementation 'me.nobeld:SimplixStorage:3.3.0-beta.3'
-    implementation 'com.github.DragonFixes:SimplixStorage:master-SNAPSHOT'
-    shadow 'com.github.DragonFixes:SimplixStorage:master-SNAPSHOT'
-    implementation 'org.jetbrains:annotations:24.0.1'
-    shadow 'org.jetbrains:annotations:24.0.1'
     implementation 'mysql:mysql-connector-java:8.0.33'
-    shadow 'mysql:mysql-connector-java:8.0.33'
     implementation 'org.xerial:sqlite-jdbc:3.46.1.0'
-    shadow 'org.xerial:sqlite-jdbc:3.46.1.0'
     implementation 'com.zaxxer:HikariCP:5.1.0'
-    shadow 'com.zaxxer:HikariCP:5.1.0'
     implementation 'net.objecthunter:exp4j:0.4.8'
-    shadow 'net.objecthunter:exp4j:0.4.8'
     implementation 'com.google.re2j:re2j:1.7'
-    shadow 'com.google.re2j:re2j:1.7'
 }
 
 shadowJar {
@@ -73,8 +63,6 @@ shadowJar {
     archiveFileName = "${project.name}-${project.version}.jar"
 }
 
-artifacts {
-    archives shadowJar
 }
 
 java {
