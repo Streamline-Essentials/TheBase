@@ -29,11 +29,18 @@ configurations {
 }
 
 dependencies {
+    // Databases
     implementation 'mysql:mysql-connector-java:8.0.33'
     implementation 'org.xerial:sqlite-jdbc:3.46.1.0'
     implementation 'com.zaxxer:HikariCP:5.1.0'
+    // Exp4j
     implementation 'net.objecthunter:exp4j:0.4.8'
+    // RE2J
     implementation 'com.google.re2j:re2j:1.7'
+    // JetBrains Annotations
+    implementation 'org.jetbrains:annotations:24.0.1'
+    // SimplixStorage
+    implementation 'com.github.DragonFixes:SimplixStorage:master-SNAPSHOT'
 }
 
 shadowJar {
