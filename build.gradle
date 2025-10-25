@@ -1,11 +1,12 @@
 plugins {
     id 'java'
     id 'io.freefair.lombok' version '8.10.2'
+    id 'com.gradleup.shadow' version '8.3.6'
     id 'maven-publish'
 }
 
-group = 'com.github.server-utilities'
-version = '1.0.0'
+group = project.properties['group'] ?: 'gg.drak'
+version = project.properties['version'] ?: '1.0.0'
 
 java.sourceCompatibility = JavaVersion.VERSION_11
 java.targetCompatibility = JavaVersion.VERSION_11
@@ -61,8 +62,6 @@ shadowJar {
     exclude '**/docs/**'
 
     archiveFileName = "${project.name}-${project.version}.jar"
-}
-
 }
 
 java {
