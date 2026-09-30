@@ -2,6 +2,7 @@ package gg.drak.thebase.storage.resources.flat;
 
 import de.leonhard.storage.*;
 import de.leonhard.storage.internal.FlatFile;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import gg.drak.thebase.storage.StorageUtils;
@@ -13,6 +14,7 @@ import java.nio.file.Files;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Getter @Setter
 public class FlatFileResource<T extends FlatFile> extends StorageResource<T> {
@@ -21,6 +23,8 @@ public class FlatFileResource<T extends FlatFile> extends StorageResource<T> {
     final File parentDirectory;
     final File selfFile;
     final boolean selfContained;
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    private final AtomicLong lastChangeCheck = new AtomicLong();
 
     public FlatFileResource(Class<T> resourceType, String fileName, File parentDirectory, boolean selfContained) {
         super(resourceType, "name", fileName);
@@ -53,8 +57,41 @@ public class FlatFileResource<T extends FlatFile> extends StorageResource<T> {
         }
     }
 
+    /**
+     * Reloads the underlying file in place if it changed on disk, checking at most once per
+     * {@code hangingMillis}. Simplix runs with {@code ReloadSettings.MANUAL} (see
+     * {@link StorageUtils#getDefaultReloadSettings()}), so this is what keeps reads through this
+     * resource in step with external edits without a file stat on every read.
+     */
+    public void refreshIfChanged() {
+        T current = this.resource;
+        if (current == null) return;
+
+        long now = System.currentTimeMillis();
+        long last = this.lastChangeCheck.get();
+        if (now - last < getHangingMillis()) return;
+        if (! this.lastChangeCheck.compareAndSet(last, now)) return;
+
+        if (current.hasChanged()) {
+            current.forceReload();
+            syncMap();
+        }
+    }
+
+    /**
+     * Returns the underlying Simplix file, first reloading it if it changed on disk (see
+     * {@link #refreshIfChanged()}), so callers reading through it directly see file edits too.
+     *
+     * @return the underlying Simplix file
+     */
+    public T getResource() {
+        refreshIfChanged();
+        return this.resource;
+    }
+
     @Override
     public <O> O get(String key, Class<O> def) {
+        refreshIfChanged();
         try {
             O object = this.resource.get(key, def.newInstance());
 
@@ -67,8 +104,15 @@ public class FlatFileResource<T extends FlatFile> extends StorageResource<T> {
         }
     }
 
+    /**
+     * Re-reads the file, unless it is already loaded and unchanged on disk. Simplix records its own
+     * writes as a load, so values set through this resource do not count as a change.
+     */
     @Override
     public void continueReloadResource() {
+        T current = this.resource;
+        if (current != null && ! current.hasChanged()) return;
+
         reload(this.selfContained);
         syncMap();
     }
@@ -80,6 +124,7 @@ public class FlatFileResource<T extends FlatFile> extends StorageResource<T> {
 
     @Override
     public <O> O getOrSetDefault(String key, O value) {
+        refreshIfChanged();
         return this.resource.getOrSetDefault(key, value);
     }
 
@@ -156,17 +201,18 @@ public class FlatFileResource<T extends FlatFile> extends StorageResource<T> {
             }
         }
 
+        SimplixBuilder builder = SimplixBuilder.fromFile(file).setReloadSettings(StorageUtils.getDefaultReloadSettings());
         if (getResourceType().equals(Config.class)) {
-            return (T) SimplixBuilder.fromFile(file).createConfig();
+            return (T) builder.createConfig();
         }
         if (getResourceType().equals(Yaml.class)) {
-            return (T) SimplixBuilder.fromFile(file).createYaml();
+            return (T) builder.createYaml();
         }
         if (getResourceType().equals(Json.class)) {
-            return (T) SimplixBuilder.fromFile(file).createJson();
+            return (T) builder.createJson();
         }
         if (getResourceType().equals(Toml.class)) {
-            return (T) SimplixBuilder.fromFile(file).createToml();
+            return (T) builder.createToml();
         }
         return null;
     }
