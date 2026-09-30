@@ -122,8 +122,14 @@ public class StorageUtils {
                 ;
     }
 
+    /**
+     * Simplix's own reload is disabled because {@code INTELLIGENT} stats the file on every single
+     * read, which is a syscall per config getter on hot paths. File edits are picked up instead by
+     * {@link gg.drak.thebase.storage.resources.flat.FlatFileResource}, which checks the file at most
+     * once per {@code hangingMillis}.
+     */
     public static ReloadSettings getDefaultReloadSettings() {
-        return ReloadSettings.INTELLIGENT;
+        return ReloadSettings.MANUALLY;
     }
 
     public static ConfigSettings getDefaultConfigSettings() {

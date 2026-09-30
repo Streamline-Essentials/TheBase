@@ -5,11 +5,9 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import gg.drak.thebase.objects.Classifiable;
 import gg.drak.thebase.storage.StorageUtils;
-import gg.drak.thebase.utils.MathUtils;
 import gg.drak.thebase.utils.StringUtils;
 
 import java.io.InputStream;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -52,10 +50,9 @@ public abstract class StorageResource<T> implements Comparable<StorageResource<?
 
     public void reloadResource(boolean force) {
         if (! force) {
-            if (this.lastReload != null) {
-                if (! MathUtils.isDateOlderThan(this.lastReload, this.hangingMillis, ChronoUnit.MILLIS)) {
-                    return;
-                }
+            Date last = this.lastReload;
+            if (last != null && System.currentTimeMillis() - last.getTime() <= this.hangingMillis) {
+                return;
             }
         }
 
